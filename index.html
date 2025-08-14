@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MESONO - Binaural Beat Creator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Anton:wght@400&display=swap" rel="stylesheet">
+    <style>
+        .mesono-logo {
+            font-family: 'Anton', 'COMODO STAMP', Arial Black, sans-serif;
+            font-weight: 400;
+            letter-spacing: 6px;
+            text-transform: uppercase;
+        }
+        
+        body {
+            margin: 0;
+            padding: 0;
+            background: #d6d3d1;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 600px;
+            aspect-ratio: 1;
+            position: relative;
+            padding: 20px;
+        }
+        
+        .circle {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #a8a29e 0%, #78716c 100%);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+        
+        .concentric-ring {
+            position: absolute;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+        
+        .frequency-marker {
+            position: absolute;
+            color: white;
+            font-size: 12px;
+            font-weight: 300;
+            text-align: center;
+            line-height: 1.2;
+            opacity: 0.6;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            white-space: pre-line;
+        }
+        
+        .logo-container {
+            position: absolute;
+            left: 50%;
+            top: 45%;
+            transform: translate(-50%, -50%);
+            z-index: 25;
+            width: clamp(160px, 25vw, 240px);
+            height: clamp(50px, 10vw, 80px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .logo-image {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            transition: filter 0.3s ease;
+        }
+        
+        .logo-text {
+            display: none;
+            color: white;
+            font-size: clamp(28px, 7vw, 54px);
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .frequency-display {
+            position: absolute;
+            left: 50%;
+            top: 65%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: clamp(14px, 3vw, 18px);
+            font-weight: 500;
+            text-align: center;
+            z-index: 15;
+        }
+        
+        .orb {
+            position: absolute;
+            width: clamp(24px, 4vw, 32px);
+            height: clamp(24px, 4vw, 32px);
+            background-color: white;
+            border-radius: 50%;
+            cursor: grab;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            transition: scale 0.1s ease, box-shadow 0.3s ease;
+            transform: translate(-50%, -50%);
+        }
+        
+        .orb:active {
+            cursor: grabbing;
+        }
+        
+        .ripple {
+            position: absolute;
+            width: clamp(48px, 8vw, 60px);
+            height: clamp(48px, 8vw, 60px);
+            border: 2px solid white;
+            border-radius: 50%;
+            pointer-events: none;
+            animation: pulse 2s infinite;
+            transform: translate(-50%, -50%);
+        }
+        
+        .controls {
+            position: absolute;
+            bottom: 16px;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 32px;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            background-color: #57534e;
+            color: white;
+            font-size: 18px;
+            font-weight: 300;
+            border-radius: 9999px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn:hover:not(:disabled) {
+            background-color: #44403c;
+            transform: scale(1.05);
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 0.4; }
+            50% { opacity: 0.8; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="circle" id="circle">
+            <!-- Concentric rings will be added by JavaScript -->
+            
+            <!-- Frequency markers will be added by JavaScript -->
+            
+            <!-- Logo -->
+            <div class="logo-container">
+                <img 
+                    src="https://i.imgur.com/jItq40u.png"
+                    alt="MESONO Logo"
+                    class="logo-image"
+                    id="logoImage"
+                    onerror="showFallbackLogo()"
+                />
+                <div class="mesono-logo logo-text" id="logoText">
+                    MESONO
+                </div>
+            </div>
+            
+            <!-- Frequency display -->
+            <div class="frequency-display" id="frequencyDisplay">
+                8.0 Hz
+            </div>
+            
+            <!-- Interactive orb -->
+            <div class="orb" id="orb" style="left: 50%; top: 50%;"></div>
+            
+            <!-- Ripple effect (hidden initially) -->
+            <div class="ripple" id="ripple" style="display: none; left: 50%; top: 50%;"></div>
+        </div>
+        
+        <!-- Control buttons -->
+        <div class="controls">
+            <button class="btn" id="startBtn" onclick="startAudio()">START</button>
+            <button class="btn" id="stopBtn" onclick="stopAudio()" disabled>STOP</button>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let audioContext = null;
+        let leftOsc = null;
+        let rightOsc = null;
+        let leftGain = null;
+        let rightGain = null;
+        let merger = null;
+        let isPlaying = false;
+        let isDragging = false;
+        let beatFrequency = 8;
+        let baseFrequency = 200;
+        let orbPosition = { x: 0.5, y: 0.5 };
+        
+        // Frequency markers data
+        const frequencyMarkers = [
+            { angle: 0, frequency: 1, label: '1 Hz\nDelta' },
+            { angle: 30, frequency: 4, label: '4 Hz\nTheta' },
+            { angle: 60, frequency: 8, label: '8 Hz\nAlpha' },
+            { angle: 90, frequency: 10, label: '10 Hz\nAlpha' },
+            { angle: 120, frequency: 15, label: '15 Hz\nBeta' },
+            { angle: 150, frequency: 20, label: '20 Hz\nBeta' },
+            { angle: 180, frequency: 30, label: '30 Hz\nGamma' },
+            { angle: 210, frequency: 40, label: '40 Hz\nGamma' },
+            { angle: 240, frequency: 60, label: '60 Hz\nGamma' },
+            { angle: 270, frequency: 80, label: '80 Hz\nHigh Gamma' },
+            { angle: 300, frequency: 100, label: '100 Hz\nHigh Gamma' },
+            { angle: 330, frequency: 120, label: '120 Hz\nUltra High' }
+        ];
+        
+        // Initialize the interface
+        function init() {
+            createConcentricRings();
+            createFrequencyMarkers();
+            setupEventListeners();
+            console.log('MESONO Binaural Beat Creator loaded successfully!');
+        }
+        
+        // Create concentric rings
+        function createConcentricRings() {
+            const circle = document.getElementById('circle');
+            for (let i = 1; i <= 12; i++) {
+                const ring = document.createElement('div');
+                ring.className = 'concentric-ring';
+                const radius = i * 4.2;
+                ring.style.width = `${radius}%`;
+                ring.style.height = `${radius}%`;
+                ring.style.left = `${50 - radius/2}%`;
+                ring.style.top = `${50 - radius/2}%`;
+                circle.appendChild(ring);
+            }
+        }
+        
+        // Create frequency markers
+        function createFrequencyMarkers() {
+            const circle = document.getElementById('circle');
+            frequencyMarkers.forEach(marker => {
+                const position = angleToPosition(marker.angle);
+                const markerEl = document.createElement('div');
+                markerEl.className = 'frequency-marker';
+                markerEl.style.left = `${position.x * 100}%`;
+                markerEl.style.top = `${position.y * 100}%`;
+                markerEl.textContent = marker.label;
+                circle.appendChild(markerEl);
+            });
+        }
+        
+        // Convert angle to position
+        function angleToPosition(angle) {
+            const radian = (angle - 90) * (Math.PI / 180);
+            const radius = 0.42;
+            return {
+                x: 0.5 + radius * Math.cos(radian),
+                y: 0.5 + radius * Math.sin(radian)
+            };
+        }
+        
+        // Setup event listeners
+        function setupEventListeners() {
+            const orb = document.getElementById('orb');
+            
+            // Mouse events
+            orb.addEventListener('mousedown', startDrag);
+            document.addEventListener('mousemove', drag);
+            document.addEventListener('mouseup', stopDrag);
+            
+            // Touch events
+            orb.addEventListener('touchstart', startDrag);
+            document.addEventListener('touchmove', drag);
+            document.addEventListener('touchend', stopDrag);
+        }
+        
+        // Drag functions
+        function startDrag(e) {
+            e.preventDefault();
+            isDragging = true;
+        }
+        
+        function drag(e) {
+            if (!isDragging) return;
+            
+            const circle = document.getElementById('circle');
+            const rect = circle.getBoundingClientRect();
+            
+            let clientX, clientY;
+            if (e.touches) {
+                clientX = e.touches[0].clientX - rect.left;
+                clientY = e.touches[0].clientY - rect.top;
+            } else {
+                clientX = e.clientX - rect.left;
+                clientY = e.clientY - rect.top;
+            }
+            
+            const relX = clientX / rect.width;
+            const relY = clientY / rect.height;
+            
+            const distance = Math.sqrt(Math.pow(relX - 0.5, 2) + Math.pow(relY - 0.5, 2));
+            const maxRadius = 0.46;
+            
+            if (distance <= maxRadius) {
+                orbPosition = { x: relX, y: relY };
+            } else {
+                const angle = Math.atan2(relY - 0.5, relX - 0.5);
+                orbPosition = {
+                    x: 0.5 + maxRadius * Math.cos(angle),
+                    y: 0.5 + maxRadius * Math.sin(angle)
+                };
+            }
+            
+            updateOrbPosition();
+            calculateBeatFrequency();
+        }
+        
+        function stopDrag() {
+            isDragging = false;
+        }
+        
+        // Update orb position
+        function updateOrbPosition() {
+            const orb = document.getElementById('orb');
+            const ripple = document.getElementById('ripple');
+            
+            orb.style.left = `${orbPosition.x * 100}%`;
+            orb.style.top = `${orbPosition.y * 100}%`;
+            
+            if (isPlaying) {
+                ripple.style.left = `${orbPosition.x * 100}%`;
+                ripple.style.top = `${orbPosition.y * 100}%`;
+            }
+        }
+        
+        // Calculate beat frequency
+        function calculateBeatFrequency() {
+            const deltaX = orbPosition.x - 0.5;
+            const deltaY = orbPosition.y - 0.5;
+            let angle = Math.atan2(-deltaY, deltaX) * (180 / Math.PI);
+            
+            if (angle < 0) angle += 360;
+            
+            const frequency = 1 + (angle / 360) * 119;
+            beatFrequency = Math.round(frequency * 10) / 10;
+            
+            document.getElementById('frequencyDisplay').textContent = `${beatFrequency.toFixed(1)} Hz`;
+            
+            if (isPlaying && rightOsc) {
+                rightOsc.frequency.setTargetAtTime(
+                    baseFrequency + beatFrequency,
+                    audioContext.currentTime,
+                    0.1
+                );
+            }
+        }
+        
+        // Audio functions
+        function initAudio() {
+            try {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                
+                leftOsc = audioContext.createOscillator();
+                rightOsc = audioContext.createOscillator();
+                leftGain = audioContext.createGain();
+                rightGain = audioContext.createGain();
+                merger = audioContext.createChannelMerger(2);
+                
+                leftOsc.frequency.value = baseFrequency;
+                rightOsc.frequency.value = baseFrequency + beatFrequency;
+                
+                leftGain.gain.value = 0;
+                rightGain.gain.value = 0;
+                
+                leftOsc.connect(leftGain);
+                rightOsc.connect(rightGain);
+                leftGain.connect(merger, 0, 0);
+                rightGain.connect(merger, 0, 1);
+                merger.connect(audioContext.destination);
+                
+                leftOsc.start();
+                rightOsc.start();
+                
+                console.log('Audio initialized successfully');
+                return true;
+            } catch (error) {
+                console.log('Audio initialization failed:', error);
+                return false;
+            }
+        }
+        
+        function startAudio() {
+            if (!audioContext && !initAudio()) {
+                alert('Audio initialization failed. Please try again.');
+                return;
+            }
+            
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+            
+            leftGain.gain.setTargetAtTime(0.3, audioContext.currentTime, 0.1);
+            rightGain.gain.setTargetAtTime(0.3, audioContext.currentTime, 0.1);
+            
+            isPlaying = true;
+            document.getElementById('startBtn').disabled = true;
+            document.getElementById('stopBtn').disabled = false;
+            document.getElementById('ripple').style.display = 'block';
+            
+            updateVisualEffects();
+        }
+        
+        function stopAudio() {
+            if (leftGain && rightGain) {
+                leftGain.gain.setTargetAtTime(0, audioContext.currentTime, 0.1);
+                rightGain.gain.setTargetAtTime(0, audioContext.currentTime, 0.1);
+            }
+            
+            isPlaying = false;
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('stopBtn').disabled = true;
+            document.getElementById('ripple').style.display = 'none';
+            
+            updateVisualEffects();
+        }
+        
+        function updateVisualEffects() {
+            const logoImage = document.getElementById('logoImage');
+            const logoText = document.getElementById('logoText');
+            const orb = document.getElementById('orb');
+            
+            if (isPlaying) {
+                logoImage.style.filter = 'drop-shadow(0 0 15px rgba(255,255,255,0.8)) brightness(1.1)';
+                logoText.style.textShadow = '0 0 25px rgba(255,255,255,0.8), 2px 2px 4px rgba(0,0,0,0.5)';
+                logoText.style.filter = 'drop-shadow(0 0 15px rgba(255,255,255,0.6))';
+                orb.style.boxShadow = `0 0 ${20 + (beatFrequency / 10)}px rgba(255,255,255,0.8)`;
+                orb.style.scale = `${1.2 + (beatFrequency / 100)}`;
+            } else {
+                logoImage.style.filter = 'brightness(1)';
+                logoText.style.textShadow = '2px 2px 4px rgba(0,0,0,0.3)';
+                logoText.style.filter = 'none';
+                orb.style.boxShadow = '0 4px 8px rgba(0,0,0,0.3)';
+                orb.style.scale = '1';
+            }
+        }
+        
+        function showFallbackLogo() {
+            document.getElementById('logoImage').style.display = 'none';
+            document.getElementById('logoText').style.display = 'block';
+        }
+        
+        // Initialize when page loads
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>
